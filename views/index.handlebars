@@ -1,0 +1,24 @@
+<div class="jumbotron">
+    <h1 class="display-4">Bem vindo ao blog do Jhony!</h1>
+    <p class="lead">Este é um simples blog do jhony para chamar mais atenção a do viado que esta lendo.</p>
+    <hr class="my-4">
+    <p>Troxa pra caramba ein man</p>
+    <a class="btn btn-primary btn-lg" href="#" role="button">Crie uma conta</a>
+</div>
+<hr>
+<h2>Postagens Recentes</h2>
+{{#each postagens}}
+<div class="card">
+    <div class="card-body mt-4">
+        <h4>Titulo:{{titulo}}</h4>
+        <p>{{conteudo}}</p>
+        <p>Descrição:{{descricao}}</p>
+        <a href="/postagem/{{slug}}"> <button class="btn btn-success">Leia mais</button></a>
+        <small>Data:{{data}}</small><br>
+        <small>Categoria:{{categoria.nome}}</small> <br>
+
+    </div>
+</div>
+{{else}}
+<p>Nenhuma postagem</p>
+{{/each}}
