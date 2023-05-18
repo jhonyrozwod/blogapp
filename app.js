@@ -50,7 +50,7 @@ app.use(bodyParser.json())
 //mongoose
 mongoose.Promise = global.Promise
 
-mongoose.connect("mongodb://127.0.0.1:27017/blogapp").then(() => {
+mongoose.connect(db.mongoURI).then(() => {
     console.log("conectado ao mongooo")
 }).catch((err) => {
     console.log("erro ao se conectar" + err)
