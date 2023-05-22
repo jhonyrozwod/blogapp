@@ -1,114 +1,142 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const mongoose = require('mongoose');
-require("../models/usuario")
+const mongoose = require("mongoose");
+require("../models/usuario");
 const Usuario = mongoose.model("usuarios");
-const bcrypt = require('bcryptjs');
-const passport = require('passport')
+const bcrypt = require("bcryptjs");
+const passport = require("passport");
 router.get("/registro", (req, res) => {
-  res.render("usuarios/registro")
-})
+  res.render("usuarios/registro");
+});
 
+const jwt = require("jsonwebtoken");
 
 router.post("/registro", (req, res) => {
-  var erros = []
+  var erros = [];
 
-  if (!req.body.nome || typeof req.body.nome == undefined || req.body.nome == null) {
-    erros.push({ texto: "Preencha todos os campos" })
+  if (
+    !req.body.nome ||
+    typeof req.body.nome == undefined ||
+    req.body.nome == null
+  ) {
+    erros.push({ texto: "Preencha todos os campos" });
   }
 
-  if (!req.body.email || typeof req.body.email == undefined || req.body.email == null) {
-    erros.push({ texto: "Preencha todos os campos" })
+  if (
+    !req.body.email ||
+    typeof req.body.email == undefined ||
+    req.body.email == null
+  ) {
+    erros.push({ texto: "Preencha todos os campos" });
   }
 
-  if (!req.body.senha || typeof req.body.senha == undefined || req.body.senha == null) {
-    erros.push({ texto: "Preencha todos os campos" })
+  if (
+    !req.body.senha ||
+    typeof req.body.senha == undefined ||
+    req.body.senha == null
+  ) {
+    erros.push({ texto: "Preencha todos os campos" });
   }
 
-  if (!req.body.senha2 || typeof req.body.senha2 == undefined || req.body.senha2 == null) {
-    erros.push({ texto: "Preencha todos os campos" })
+  if (
+    !req.body.senha2 ||
+    typeof req.body.senha2 == undefined ||
+    req.body.senha2 == null
+  ) {
+    erros.push({ texto: "Preencha todos os campos" });
   }
 
   if (req.body.senha != req.body.senha2) {
-    erros.push({ texto: "As senhas não são iguais" })
+    erros.push({ texto: "As senhas não são iguais" });
   }
 
   if (erros.length > 0) {
-    res.render("usuarios/registro", { erros: erros })
+    res.render("usuarios/registro", { erros: erros });
   } else {
+    Usuario.findOne({ email: req.body.email })
+      .lean()
+      .then((usuario) => {
+        if (usuario) {
+          req.flash("error_msg", "Email já cadastrado");
+          res.redirect("/usuarios/registro");
+        } else {
+          const novoUsuario = new Usuario({
+            nome: req.body.nome,
+            email: req.body.email,
+            senha: req.body.senha,
+          });
 
+          bcrypt.genSalt(10, (err, salt) => {
+            bcrypt.hash(novoUsuario.senha, salt, (erro, hash) => {
+              if (erro) {
+                req.flash("error_msg", "Houve um erro interno");
+                res.redirect("/");
+              }
+              novoUsuario.senha = hash;
 
-    Usuario.findOne({ email: req.body.email }).lean().then((usuario) => {
-      if (usuario) {
-        req.flash("error_msg", "Email já cadastrado")
-        res.redirect("/usuarios/registro")
-      } else {
-
-
-
-        const novoUsuario = new Usuario({
-          nome: req.body.nome,
-          email: req.body.email,
-          senha: req.body.senha
-        })
-
-
-        bcrypt.genSalt(10, (err, salt) => {
-          bcrypt.hash(novoUsuario.senha, salt, (erro, hash) => {
-            if (erro) {
-              req.flash("error_msg", "Houve um erro interno")
-              res.redirect("/")
-            }
-            novoUsuario.senha = hash
-
-            novoUsuario.save().then(() => {
-              req.flash("success_msg", "Usuário cadastrado com sucesso")
-              res.redirect("/")
-            }).catch((err) => {
-              req.flash("error_msg", "erro interno")
-              res.redirect("/usuarios/registro")
-
-            })
-
-
-
-          })
-        })
-
-
-      }
-    }).catch((err) => {
-      req.flash("error_msg", "Houve um erro interno")
-      res.redirect("/")
-    })
-
-
-
-
+              novoUsuario
+                .save()
+                .then(() => {
+                  req.flash("success_msg", "Usuário cadastrado com sucesso");
+                  res.redirect("/");
+                })
+                .catch((err) => {
+                  req.flash("error_msg", "erro interno");
+                  res.redirect("/usuarios/registro");
+                });
+            });
+          });
+        }
+      })
+      .catch((err) => {
+        req.flash("error_msg", "Houve um erro interno");
+        res.redirect("/");
+      });
   }
-
-
-})
-
+});
 
 router.get("/login", (req, res) => {
-  res.render("usuarios/login")
-})
+  res.render("usuarios/login");
+});
 
-router.post("/login", passport.authenticate("local",{
-  successRedirect: "/",
-    failureRedirect: "/usuarios/login",
-    failureFlash: true
-}))
+router.post("/login", (req, res, next) => {
+  passport.authenticate(
+    "local",
+    {
+      successRedirect: "/",
+      failureRedirect: "/usuarios/login",
+      failureFlash: true
+    },
+    (err, user, info) => {
+      console.log(user)
+      if (err) {
+        console.error(err);
+        return res.status(500).send("Erro interno do servidor");
+      }
 
+      if (!user) {
+        // Se a autenticação falhar, envie uma resposta de erro
+        return res.redirect('/usuarios/login');
+      }
 
-router.get('/logout', (req, res, next) => {
-  req.logout(function(err) {
-      if (err) { return next(err) }
-      res.redirect('/')
-    })
-})
+      // Se a autenticação for bem-sucedida, crie o token JWT
+      const token = jwt.sign(user, "cursodenode");
 
+      // Envie o token como resposta
+      res.locals.user = token
 
+      res.redirect("/");
+    }
+  )(req, res, next);
+});
 
-module.exports = router
+router.get("/logout", (req, res, next) => {
+  req.logout(function (err) {
+    if (err) {
+      return next(err);
+    }
+    res.redirect("/");
+  });
+});
+
+module.exports = router;

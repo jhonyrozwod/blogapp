@@ -1,7 +1,7 @@
 const localStrategy = require("passport-local").Strategy
 const mongoose = require("mongoose")
 const bcrypt = require("bcryptjs")
-
+const jwt = require('jsonwebtoken');
 
 
 // model usuario
@@ -17,7 +17,7 @@ module.exports = function (passport) {
         Usuario.findOne({ email: email }).lean().then((usuario) => {
             if (!usuario) {
                 return done(null, false, { message: "Usuário não encontrado" })
-            }
+            }   
             bcrypt.compare(senha, usuario.senha, (erro, batem) => {
             if (batem) {
                     return done(null, usuario)

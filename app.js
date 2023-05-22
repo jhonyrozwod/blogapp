@@ -29,13 +29,16 @@ app.use(passport.session())
 app.use(flash())
 
 
-
 //middleware
 app.use((req, res, next) => {
     res.locals.success_msg = req.flash("success_msg")
     res.locals.error_msg = req.flash("error_msg")
     res.locals.error = req.flash("error")
     res.locals.user = req.user || null
+    console.log("=------------------------");
+    console.log(req.user)
+    console.log("=------------------------");
+
     next()
 })
 
@@ -59,11 +62,6 @@ mongoose.connect(db.mongoURI).then(() => {
 //public
 
 app.use(express.static(path.join(__dirname, "public")))
-
-app.use((req, res, next) => {
-    console.log("oi eu sou um middleware")
-    next()
-})
 
 app.get("/", (req, res) => {
     Postagem.find().lean().populate("categoria").sort({ data: "desc" }).then((postagens) => {
